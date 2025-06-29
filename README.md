@@ -72,7 +72,7 @@ Web-based file manager for Telegram bots. Manage and organize files stored in yo
 
 ## 🔧 Technical Features
 
-- **CORS Handling**: Graceful fallback to demo mode when API calls fail
+- **Enhanced CORS Handling**: Intelligent detection and graceful handling of browser CORS restrictions
 - **Local Storage**: Remembers your bot configuration
 - **File Type Detection**: Automatic categorization based on file extensions
 - **Error Handling**: User-friendly error messages and recovery
@@ -82,13 +82,80 @@ Web-based file manager for Telegram bots. Manage and organize files stored in yo
   - `F5` - Refresh files
   - `Ctrl+R` - Refresh files
 
+## ⚠️ CORS Limitations & Solutions
+
+### The Problem
+Web browsers block direct API calls to Telegram servers due to CORS (Cross-Origin Resource Sharing) security policies. This is a browser security feature, not a bug in the application.
+
+### ✅ Recommended Solutions
+
+#### 1. **Browser Extension (Easiest)**
+- Install "CORS Unblock" or "Disable CORS" browser extension
+- Enable it for this site only
+- ⚠️ **Security Note**: Only use for testing/development
+
+#### 2. **Local Development**
+```bash
+# Clone the repository
+git clone https://github.com/foxxw0lf/telegram-drive.git
+cd telegram-drive
+
+# Run local server (choose one):
+python -m http.server 8000        # Python
+npx serve .                       # Node.js  
+php -S localhost:8000            # PHP
+
+# Open http://localhost:8000
+```
+
+#### 3. **Firefox Developer Edition**
+- Firefox has more relaxed CORS policies for development
+- Download Firefox Developer Edition
+- Open the application in Firefox
+
+#### 4. **Chrome with Disabled Security**
+```bash
+# Close all Chrome windows first
+chrome --disable-web-security --user-data-dir=/tmp/chrome
+```
+
+### 🎭 Enhanced Demo Mode
+
+If CORS blocks API access, the app automatically switches to **Demo Mode** with:
+- ✅ Full interface functionality
+- ✅ Sample files for testing all features
+- ✅ File categorization and filtering
+- ✅ All UI interactions work normally
+- ❌ No real file downloads (demo only)
+
+Click "Enhanced Demo" for more sample files!
+
 ## 🛡️ Privacy & Security
 
 - All data processing happens in your browser
 - Bot tokens are stored locally in your browser only
 - No server-side storage or processing
-- Direct communication with Telegram API
+- Direct communication with Telegram API (when CORS allows)
 - Open source - you can review all code
+- **Security Note**: CORS workarounds should only be used for development/testing
+
+## 🆘 Troubleshooting
+
+### "Failed to connect" or "Network Error"
+- **Cause**: Browser CORS policy blocking Telegram API
+- **Solution**: Use the CORS solutions listed above or try Demo Mode
+
+### "Bot token invalid"
+- **Cause**: Incorrect token format or expired token
+- **Solution**: Get a new token from @BotFather
+
+### "Chat ID not found"
+- **Cause**: Bot doesn't have access to the chat
+- **Solution**: Send a message to the bot first, or add bot to group
+
+### Files not showing up
+- **Cause**: Bot only sees new messages after being added
+- **Solution**: Send new files after connecting the bot
 
 ## 🎯 Supported File Types
 
