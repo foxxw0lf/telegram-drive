@@ -671,18 +671,21 @@
                 }
 
                 // Filter messages that contain files
-                const fileMessages = data.result.filter(update => {
-                    const message = update.message;
-                    return message && String(message.chat.id) === String(chatId).trim() && (
-                        message.document || 
-                        message.photo || 
-                        message.video || 
-                        message.audio || 
-                        message.voice ||
-                        message.video_note ||
-                        message.animation
-                    );
-                });
+                const fileMessages = data.result
+  .map(update => update.message || update.channel_post) // tangkap dua-duanya
+  .filter(message =>
+    message &&
+    String(message.chat.id) === String(chatId).trim() &&
+    (
+      message.document ||
+      message.photo ||
+      message.video ||
+      message.audio ||
+      message.voice ||
+      message.video_note ||
+      message.animation
+    )
+  );
 
                 // Convert to file objects
                 files = fileMessages.map(update => {
