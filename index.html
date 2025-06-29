@@ -653,105 +653,112 @@
             return date.toLocaleDateString('id-ID');
         }
 
-        async function fetchTelegramFiles() {
-            if (!botToken || !chatId) {
-                showNotification('Bot belum terhubung', 'error');
-                return;
-            }
-
-            try {
-                document.getElementById('syncStatus').textContent = 'Mengambil file...';
-                
-                // Get messages from the chat/channel
-                const response = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?limit=100`);
-                const data = await response.json();
-                
-                if (!data.ok) {
-                    throw new Error(data.description || 'Gagal mengambil data');
-                }
-
-                // Filter messages that contain files
-const fileMessages = data.result
-  .map(update => update.message || update.channel_post)
-  .filter(message =>
-    message &&
-    message.chat &&
-    String(message.chat.id) === String(chatId).trim() &&
-    (
-      message.document ||
-      message.photo ||
-      message.video ||
-      message.audio ||
-      message.voice ||
-      message.video_note ||
-      message.animation
-    )
-  );
-
-                // Convert to file objects
-files = fileMessages.map(message => {
-    let fileInfo = {};
-
-    if (message.document) {
-        fileInfo = {
-            type: getFileTypeFromName(message.document.file_name),
-            name: message.document.file_name,
-            size: formatFileSize(message.document.file_size),
-            file_id: message.document.file_id,
-            mime_type: message.document.mime_type
-        };
-    } else if (message.photo) {
-        const photo = message.photo[message.photo.length - 1];
-        fileInfo = {
-            type: 'img',
-            name: `Photo_${message.message_id}.jpg`,
-            size: formatFileSize(photo.file_size),
-            file_id: photo.file_id,
-            mime_type: 'image/jpeg'
-        };
-    } else if (message.video) {
-        fileInfo = {
-            type: 'vid',
-            name: message.video.file_name || `Video_${message.message_id}.mp4`,
-            size: formatFileSize(message.video.file_size),
-            file_id: message.video.file_id,
-            mime_type: message.video.mime_type
-        };
-    } else if (message.audio) {
-        fileInfo = {
-            type: 'aud',
-            name: message.audio.file_name || `Audio_${message.message_id}.mp3`,
-            size: formatFileSize(message.audio.file_size),
-            file_id: message.audio.file_id,
-            mime_type: message.audio.mime_type
-        };
-    } else if (message.voice) {
-        fileInfo = {
-            type: 'aud',
-            name: `Voice_${message.message_id}.ogg`,
-            size: formatFileSize(message.voice.file_size),
-            file_id: message.voice.file_id,
-            mime_type: 'audio/ogg'
-        };
-    } else if (message.animation) {
-        fileInfo = {
-            type: 'vid',
-            name: message.animation.file_name || `Animation_${message.message_id}.gif`,
-            size: formatFileSize(message.animation.file_size),
-            file_id: message.animation.file_id,
-            mime_type: message.animation.mime_type
-        };
+async function fetchTelegramFiles() {
+    if (!botToken || !chatId) {
+        showNotification('Bot belum terhubung', 'error');
+        return;
     }
 
-    return {
-        id: message.message_id,
-        ...fileInfo,
-        date: new Date(message.date * 1000).toISOString().split('T')[0],
-        category: getCategoryFromType(fileInfo.type),
-        caption: message.caption || '',
-        telegram_url: `https://t.me/c/${Math.abs(chatId).toString().slice(4)}/${message.message_id}`
-    };
-});
+    try {
+        document.getElementById('syncStatus').textContent = 'Mengambil file...';
+
+        // Get messages from the chat/channel
+        const response = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?limit=100`);
+        const data = await response.json();
+
+        if (!data.ok) {
+            throw new Error(data.description || 'Gagal mengambil data');
+        }
+
+        // Filter messages that contain files
+        const fileMessages = data.result
+            .map(update => update.message || update.channel_post)
+            .filter(message =>
+                message &&
+                message.chat &&
+                String(message.chat.id) === String(chatId).trim() &&
+                (
+                    message.document ||
+                    message.photo ||
+                    message.video ||
+                    message.audio ||
+                    message.voice ||
+                    message.video_note ||
+                    message.animation
+                )
+            );
+
+        // Convert to file objects
+        files = fileMessages.map(message => {
+            let fileInfo = {};
+            if (message.document) {
+                fileInfo = {
+                    type: getFileTypeFromName(message.document.file_name),
+                    name: message.document.file_name,
+                    size: formatFileSize(message.document.file_size),
+                    file_id: message.document.file_id,
+                    mime_type: message.document.mime_type
+                };
+            } else if (message.photo) {
+                const photo = message.photo[message.photo.length - 1];
+                fileInfo = {
+                    type: 'img',
+                    name: `Photo_${message.message_id}.jpg`,
+                    size: formatFileSize(photo.file_size),
+                    file_id: photo.file_id,
+                    mime_type: 'image/jpeg'
+                };
+            } else if (message.video) {
+                fileInfo = {
+                    type: 'vid',
+                    name: message.video.file_name || `Video_${message.message_id}.mp4`,
+                    size: formatFileSize(message.video.file_size),
+                    file_id: message.video.file_id,
+                    mime_type: message.video.mime_type
+                };
+            } else if (message.audio) {
+                fileInfo = {
+                    type: 'aud',
+                    name: message.audio.file_name || `Audio_${message.message_id}.mp3`,
+                    size: formatFileSize(message.audio.file_size),
+                    file_id: message.audio.file_id,
+                    mime_type: message.audio.mime_type
+                };
+            } else if (message.voice) {
+                fileInfo = {
+                    type: 'aud',
+                    name: `Voice_${message.message_id}.ogg`,
+                    size: formatFileSize(message.voice.file_size),
+                    file_id: message.voice.file_id,
+                    mime_type: 'audio/ogg'
+                };
+            } else if (message.animation) {
+                fileInfo = {
+                    type: 'vid',
+                    name: message.animation.file_name || `Animation_${message.message_id}.gif`,
+                    size: formatFileSize(message.animation.file_size),
+                    file_id: message.animation.file_id,
+                    mime_type: message.animation.mime_type
+                };
+            }
+
+            return {
+                id: message.message_id,
+                ...fileInfo,
+                date: new Date(message.date * 1000).toISOString().split('T')[0],
+                category: getCategoryFromType(fileInfo.type),
+                caption: message.caption || '',
+                telegram_url: `https://t.me/c/${Math.abs(chatId).toString().slice(4)}/${message.message_id}`
+            };
+        });
+
+        renderFiles();
+        document.getElementById('syncStatus').textContent = 'Sinkronisasi selesai';
+    } catch (error) {
+        showNotification(`Gagal mengambil file: ${error.message}`, 'error');
+        document.getElementById('syncStatus').textContent = 'Gagal sinkronisasi';
+    }
+}
 
                 // Sort by date (newest first)
                 files.sort((a, b) => new Date(b.date) - new Date(a.date));
