@@ -386,6 +386,55 @@
             background: #2196f3;
         }
 
+        .notification.warning {
+            background: #ff9800;
+        }
+
+        .cors-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            color: #856404;
+        }
+
+        .cors-warning-title {
+            font-weight: 600;
+            color: #b8860b;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cors-warning-content {
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .cors-solutions {
+            margin-top: 0.75rem;
+            padding-left: 1rem;
+        }
+
+        .cors-solutions li {
+            margin-bottom: 0.25rem;
+        }
+
+        .cors-solutions a {
+            color: #b8860b;
+            text-decoration: underline;
+        }
+
+        .modal code {
+            background: #f5f5f5;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+
         .loading {
             opacity: 0.6;
             pointer-events: none;
@@ -430,6 +479,22 @@
     <div class="main-container">
         <div class="sidebar">
             <div class="sidebar-section">
+                <div class="cors-warning" id="corsWarning" style="display: none;">
+                    <div class="cors-warning-title">
+                        <span>⚠️</span>
+                        <span>CORS Limitation Detected</span>
+                    </div>
+                    <div class="cors-warning-content">
+                        <p>Your browser is blocking direct API calls to Telegram due to CORS (Cross-Origin Resource Sharing) restrictions.</p>
+                        <p><strong>Alternative Solutions:</strong></p>
+                        <ul class="cors-solutions">
+                            <li>Install a <a href="#" onclick="showCorsHelp()">CORS browser extension</a></li>
+                            <li>Run the app on <a href="#" onclick="showLocalHelp()">localhost</a></li>
+                            <li>Use the <a href="#" onclick="showDemoFeatures()">enhanced demo mode</a></li>
+                        </ul>
+                    </div>
+                </div>
+
                 <div class="telegram-setup">
                     <div class="setup-title">Setup Bot Telegram</div>
                     <div class="setup-steps">
@@ -533,162 +598,65 @@
         </div>
     </div>
 
-    <div class="notification" id="notification"></div>
-
-    <script>
-        let botToken = '';
-        let chatId = '';
-        let files = [];
-        let currentFilter = 'all';
-        let isDemo = false;
-
-        // Sample data for demo mode
-        const sampleFiles = [
-            {
-                id: 1,
-                name: "Laporan_Q4_2024.pdf",
-                size: "2.3 MB",
-                date: "2024-12-15",
-                type: "pdf",
-                category: "documents",
-                url: "#"
-            },
-            {
-                id: 2,
-                name: "Presentasi_Marketing.pptx",
-                size: "8.7 MB", 
-                date: "2024-12-14",
-                type: "doc",
-                category: "documents",
-                url: "#"
-            },
-            {
-                id: 3,
-                name: "Screenshot_Dashboard.png",
-                size: "1.2 MB",
-                date: "2024-12-13",
-                type: "img",
-                category: "images",
-                url: "#"
-            },
-            {
-                id: 4,
-                name: "Video_Tutorial.mp4",
-                size: "45.8 MB",
-                date: "2024-12-12",
-                type: "vid",
-                category: "videos",
-                url: "#"
-            },
-            {
-                id: 5,
-                name: "Database_Backup.zip",
-                size: "156.2 MB",
-                date: "2024-12-11",
-                type: "arc",
-                category: "others",
-                url: "#"
-            }
-        ];
-
-        // Initialize app
-        document.addEventListener('DOMContentLoaded', function() {
-            loadSavedConfig();
-            loadDemoData();
-        });
-
-        // Load saved configuration from localStorage
-        function loadSavedConfig() {
-            const savedToken = localStorage.getItem('telegram_bot_token');
-            const savedChatId = localStorage.getItem('telegram_chat_id');
-            
-            if (savedToken) {
-                document.getElementById('botToken').value = savedToken;
-                botToken = savedToken;
-            }
-            
-            if (savedChatId) {
-                document.getElementById('chatId').value = savedChatId;
-                chatId = savedChatId;
-            }
-        }
-
-        // Save configuration to localStorage
-        function saveConfig() {
-            localStorage.setItem('telegram_bot_token', botToken);
-            localStorage.setItem('telegram_chat_id', chatId);
-        }
-
-        // Load demo data initially
-        function loadDemoData() {
-            files = [...sampleFiles];
-            isDemo = true;
-            renderFiles();
-            showNotification('Mode demo aktif - Gunakan data contoh', 'info');
-        }
-
-        // Connect to Telegram Bot
-        async function connectBot() {
-            const tokenInput = document.getElementById('botToken').value.trim();
-            const chatIdInput = document.getElementById('chatId').value.trim();
-
-            if (!tokenInput || !chatIdInput) {
-                showNotification('Mohon isi Bot Token dan Chat ID', 'error');
-                return;
-            }
-
-            // Validate token format
-            if (!tokenInput.match(/^\d+:[A-Za-z0-9_-]+$/)) {
-                showNotification('Format Bot Token tidak valid', 'error');
-                return;
-            }
-
-            // Validate chat ID format
-            if (!chatIdInput.match(/^-?\d+$/)) {
-                showNotification('Format Chat ID tidak valid', 'error');
-                return;
-            }
-
-            botToken = tokenInput;
-            chatId = chatIdInput;
-            
-            document.getElementById('syncStatus').textContent = 'Menghubungkan...';
-            
-            try {
-                // Test bot connection
-                const response = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
-                const data = await response.json();
+    <!-- CORS Help Modal -->
+    <div class="modal" id="corsHelpModal">
+        <div class="modal-content">
+            <div class="modal-header">🔧 CORS Solutions</div>
+            <div class="modal-body">
+                <p><strong>Option 1: Browser Extension (Easiest)</strong></p>
+                <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+                    <li>Install "CORS Unblock" or "Disable CORS" extension</li>
+                    <li>Enable the extension for this site</li>
+                    <li>Refresh the page and try connecting again</li>
+                </ul>
                 
-                if (data.ok) {
-                    document.getElementById('syncStatus').textContent = 'Terhubung';
-                    showNotification(`Bot berhasil terhubung! (@${data.result.username})`, 'success');
-                    saveConfig();
-                    isDemo = false;
-                    
-                    // Load files from Telegram
-                    await fetchTelegramFiles();
-                } else {
-                    throw new Error(data.description || 'Token tidak valid');
-                }
-            } catch (error) {
-                document.getElementById('syncStatus').textContent = 'Mode Demo';
-                showNotification(`Tidak dapat terhubung ke Telegram. Menggunakan mode demo.`, 'info');
-                console.error('Connection error:', error);
+                <p><strong>Option 2: Chrome with Disabled Security</strong></p>
+                <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+                    <li>Close all Chrome windows</li>
+                    <li>Run: <code>chrome --disable-web-security --user-data-dir=/tmp/chrome</code></li>
+                    <li>Open this site in the new Chrome window</li>
+                </ul>
                 
-                // Fall back to demo mode
-                loadDemoData();
-            }
-        }
-
-        // Fetch files from Telegram
-        async function fetchTelegramFiles() {
-            if (!botToken || !chatId) {
-                showNotification('Bot belum terhubung', 'error');
-                return;
-            }
-
-            try {
-                document.getElementById('syncStatus').textContent = 'Mengambil file...';
+                <p><strong>Option 3: Use Firefox Developer Edition</strong></p>
+                <ul style="margin-left: 1rem;">
+                    <li>Firefox has more relaxed CORS policies for development</li>
+                    <li>Install Firefox Developer Edition</li>
+                    <li>Open this site and try connecting</li>
+                </ul>
                 
-                // Get messages from the chat/channel
-                const response = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?limit=100`)
+                <div style="margin-top: 1rem; padding: 0.75rem; background: #ffebee; border-radius: 4px; font-size: 0.85rem;">
+                    <strong>⚠️ Security Note:</strong> These methods disable browser security features. Only use for testing and development.
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-sec" onclick="closeModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Local Development Help Modal -->
+    <div class="modal" id="localHelpModal">
+        <div class="modal-content">
+            <div class="modal-header">💻 Local Development Setup</div>
+            <div class="modal-body">
+                <p><strong>Why Localhost Works Better:</strong></p>
+                <p style="margin-bottom: 1rem;">Browsers have relaxed CORS policies for localhost, making API calls more likely to succeed.</p>
+                
+                <p><strong>Setup Instructions:</strong></p>
+                <ol style="margin-left: 1rem; margin-bottom: 1rem;">
+                    <li>Download the source code from GitHub</li>
+                    <li>Extract to a local folder</li>
+                    <li>Open terminal/command prompt in that folder</li>
+                    <li>Run a local server:
+                        <ul style="margin-left: 1rem; margin-top: 0.5rem;">
+                            <li><code>python -m http.server 8000</code> (Python)</li>
+                            <li><code>npx serve .</code> (Node.js)</li>
+                            <li><code>php -S localhost:8000</code> (PHP)</li>
+                        </ul>
+                    </li>
+                    <li>Open <code>http://localhost:8000</code> in your browser</li>
+                </ol>
+                
+                <p><strong>Alternative: Use GitHub Codespaces</strong></p>
+                <ul style="margin-left: 1rem;">
+   
