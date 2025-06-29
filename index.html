@@ -673,7 +673,7 @@
                 // Filter messages that contain files
                 const fileMessages = data.result.filter(update => {
                     const message = update.message;
-                    return message && message.chat.id == chatId && (
+                    return message && String(message.chat.id) === String(chatId).trim() && (
                         message.document || 
                         message.photo || 
                         message.video || 
