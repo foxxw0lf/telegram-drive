@@ -672,9 +672,10 @@
 
                 // Filter messages that contain files
                 const fileMessages = data.result
-  .map(update => update.message || update.channel_post) // tangkap dua-duanya
+  .map(update => update.message || update.channel_post)
   .filter(message =>
     message &&
+    message.chat &&
     String(message.chat.id) === String(chatId).trim() &&
     (
       message.document ||
