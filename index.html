@@ -689,70 +689,69 @@ const fileMessages = data.result
   );
 
                 // Convert to file objects
-                files = fileMessages.map(update => {
-                    const message = update.message;
-                    let fileInfo = {};
-                    
-                    if (message.document) {
-                        fileInfo = {
-                            type: getFileTypeFromName(message.document.file_name),
-                            name: message.document.file_name,
-                            size: formatFileSize(message.document.file_size),
-                            file_id: message.document.file_id,
-                            mime_type: message.document.mime_type
-                        };
-                    } else if (message.photo) {
-                        const photo = message.photo[message.photo.length - 1]; // Get largest size
-                        fileInfo = {
-                            type: 'img',
-                            name: `Photo_${message.message_id}.jpg`,
-                            size: formatFileSize(photo.file_size),
-                            file_id: photo.file_id,
-                            mime_type: 'image/jpeg'
-                        };
-                    } else if (message.video) {
-                        fileInfo = {
-                            type: 'vid',
-                            name: message.video.file_name || `Video_${message.message_id}.mp4`,
-                            size: formatFileSize(message.video.file_size),
-                            file_id: message.video.file_id,
-                            mime_type: message.video.mime_type
-                        };
-                    } else if (message.audio) {
-                        fileInfo = {
-                            type: 'aud',
-                            name: message.audio.file_name || `Audio_${message.message_id}.mp3`,
-                            size: formatFileSize(message.audio.file_size),
-                            file_id: message.audio.file_id,
-                            mime_type: message.audio.mime_type
-                        };
-                    } else if (message.voice) {
-                        fileInfo = {
-                            type: 'aud',
-                            name: `Voice_${message.message_id}.ogg`,
-                            size: formatFileSize(message.voice.file_size),
-                            file_id: message.voice.file_id,
-                            mime_type: 'audio/ogg'
-                        };
-                    } else if (message.animation) {
-                        fileInfo = {
-                            type: 'vid',
-                            name: message.animation.file_name || `Animation_${message.message_id}.gif`,
-                            size: formatFileSize(message.animation.file_size),
-                            file_id: message.animation.file_id,
-                            mime_type: message.animation.mime_type
-                        };
-                    }
+files = fileMessages.map(message => {
+    let fileInfo = {};
 
-                    return {
-                        id: message.message_id,
-                        ...fileInfo,
-                        date: new Date(message.date * 1000).toISOString().split('T')[0],
-                        category: getCategoryFromType(fileInfo.type),
-                        caption: message.caption || '',
-                        telegram_url: `https://t.me/c/${Math.abs(chatId).toString().slice(4)}/${message.message_id}`
-                    };
-                });
+    if (message.document) {
+        fileInfo = {
+            type: getFileTypeFromName(message.document.file_name),
+            name: message.document.file_name,
+            size: formatFileSize(message.document.file_size),
+            file_id: message.document.file_id,
+            mime_type: message.document.mime_type
+        };
+    } else if (message.photo) {
+        const photo = message.photo[message.photo.length - 1];
+        fileInfo = {
+            type: 'img',
+            name: `Photo_${message.message_id}.jpg`,
+            size: formatFileSize(photo.file_size),
+            file_id: photo.file_id,
+            mime_type: 'image/jpeg'
+        };
+    } else if (message.video) {
+        fileInfo = {
+            type: 'vid',
+            name: message.video.file_name || `Video_${message.message_id}.mp4`,
+            size: formatFileSize(message.video.file_size),
+            file_id: message.video.file_id,
+            mime_type: message.video.mime_type
+        };
+    } else if (message.audio) {
+        fileInfo = {
+            type: 'aud',
+            name: message.audio.file_name || `Audio_${message.message_id}.mp3`,
+            size: formatFileSize(message.audio.file_size),
+            file_id: message.audio.file_id,
+            mime_type: message.audio.mime_type
+        };
+    } else if (message.voice) {
+        fileInfo = {
+            type: 'aud',
+            name: `Voice_${message.message_id}.ogg`,
+            size: formatFileSize(message.voice.file_size),
+            file_id: message.voice.file_id,
+            mime_type: 'audio/ogg'
+        };
+    } else if (message.animation) {
+        fileInfo = {
+            type: 'vid',
+            name: message.animation.file_name || `Animation_${message.message_id}.gif`,
+            size: formatFileSize(message.animation.file_size),
+            file_id: message.animation.file_id,
+            mime_type: message.animation.mime_type
+        };
+    }
+
+    return {
+        id: message.message_id,
+        ...fileInfo,
+        date: new Date(message.date * 1000).toISOString().split('T')[0],
+        category: getCategoryFromType(fileInfo.type),
+        caption: message.caption || '',
+        telegram_url: `https://t.me/c/${Math.abs(chatId).toString().slice(4)}/${message.message_id}`
+    };
+});
 
                 // Sort by date (newest first)
                 files.sort((a, b) => new Date(b.date) - new Date(a.date));
