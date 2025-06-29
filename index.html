@@ -391,6 +391,47 @@
             pointer-events: none;
         }
 
+        .cors-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 0.75rem 2rem;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .cors-warning.show {
+            display: flex;
+        }
+
+        .cors-warning-content {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cors-warning-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .cors-warning-btn {
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #d4a574;
+            background: #fff;
+            color: #856404;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .cors-warning-btn:hover {
+            background: #f8f9fa;
+        }
+
         @media (max-width: 768px) {
             .main-container {
                 flex-direction: column;
@@ -427,6 +468,18 @@
         </div>
     </div>
 
+    <!-- CORS Warning Banner -->
+    <div class="cors-warning" id="corsWarning">
+        <div class="cors-warning-content">
+            <span>⚠️</span>
+            <span><strong>Browser Security Notice:</strong> Direct API calls to Telegram may be blocked by CORS policy.</span>
+        </div>
+        <div class="cors-warning-actions">
+            <button class="cors-warning-btn" onclick="showCorsInfo()">Learn More</button>
+            <button class="cors-warning-btn" onclick="hideCorsWarning()">✕</button>
+        </div>
+    </div>
+
     <div class="main-container">
         <div class="sidebar">
             <div class="sidebar-section">
@@ -441,8 +494,8 @@
                         </ol>
                     </div>
                     <div class="bot-config">
-                        <input type="text" id="botToken" placeholder="Bot Token" value="123456789:AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPxxx">
-                        <input type="text" id="chatId" placeholder="Chat ID" value="-1001234567890">
+                        <input type="text" id="botToken" placeholder="Bot Token (from @BotFather)">
+                        <input type="text" id="chatId" placeholder="Chat ID (your channel/group ID)">
                         <button class="btn btn-pri" onclick="connectBot()">Hubungkan</button>
                     </div>
                 </div>
@@ -529,6 +582,38 @@
             <div class="modal-actions">
                 <button class="btn btn-sec" onclick="closeModal()">Tutup</button>
                 <button class="btn btn-pri" onclick="openTelegram()">Buka Telegram</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CORS Information Modal -->
+    <div class="modal" id="corsModal">
+        <div class="modal-content">
+            <div class="modal-header">🔒 Browser Security & CORS</div>
+            <div class="modal-body">
+                <p><strong>Why doesn't my bot work?</strong></p>
+                <p style="margin-bottom: 1rem;">Modern browsers block direct API calls to external services like Telegram due to CORS (Cross-Origin Resource Sharing) security policy. This is a browser security feature, not a bug.</p>
+                
+                <p><strong>Available Solutions:</strong></p>
+                <ol style="margin-left: 1rem; margin-bottom: 1rem;">
+                    <li><strong>Browser Extension:</strong> Install a CORS-disabling extension like "CORS Unblock"</li>
+                    <li><strong>Local Development:</strong> Run the app on localhost (http://localhost)</li>
+                    <li><strong>Different Browser:</strong> Try different browsers (some handle CORS differently)</li>
+                    <li><strong>CORS Proxy:</strong> Use a CORS proxy service (security risk - use carefully)</li>
+                    <li><strong>Desktop App:</strong> Use Telegram Desktop or wrap in Electron</li>
+                </ol>
+                
+                <div style="padding: 0.75rem; background: #f8d7da; border-radius: 4px; font-size: 0.85rem; margin-top: 1rem;">
+                    <strong>⚠️ Security Note:</strong> Disabling CORS reduces browser security. Only do this for trusted sites and development purposes.
+                </div>
+                
+                <p style="margin-top: 1rem; font-size: 0.9rem; color: #666;">
+                    <strong>Demo Mode:</strong> The app falls back to demo mode to showcase features when API calls fail.
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-sec" onclick="closeCorsModal()">Close</button>
+                <button class="btn btn-pri" onclick="openCorsExtension()">Get CORS Extension</button>
             </div>
         </div>
     </div>
@@ -624,7 +709,13 @@
             files = [...sampleFiles];
             isDemo = true;
             renderFiles();
-            showNotification('Mode demo aktif - Gunakan data contoh', 'info');
+            
+            // Show enhanced demo mode message
+            if (document.getElementById('syncStatus').textContent.includes('CORS')) {
+                showNotification('🔒 Demo mode active - CORS blocked real data. Try the solutions in "Learn More"', 'info');
+            } else {
+                showNotification('📋 Demo mode active - Using sample data for demonstration', 'info');
+            }
         }
 
         // Connect to Telegram Bot
@@ -664,6 +755,7 @@
                     showNotification(`Bot berhasil terhubung! (@${data.result.username})`, 'success');
                     saveConfig();
                     isDemo = false;
+                    hideCorsWarning();
                     
                     // Load files from Telegram
                     await fetchTelegramFiles();
@@ -671,11 +763,30 @@
                     throw new Error(data.description || 'Token tidak valid');
                 }
             } catch (error) {
-                document.getElementById('syncStatus').textContent = 'Mode Demo';
-                showNotification(`Tidak dapat terhubung ke Telegram. Menggunakan mode demo.`, 'info');
                 console.error('Connection error:', error);
                 
-                // Fall back to demo mode
+                // Detect CORS error specifically
+                const isCorsError = error.message.includes('CORS') || 
+                                  error.message.includes('Cross-Origin') ||
+                                  error.message.includes('Network Error') ||
+                                  error.name === 'TypeError' ||
+                                  !error.message; // Often CORS errors have no message
+                
+                if (isCorsError) {
+                    document.getElementById('syncStatus').textContent = 'Mode Demo - CORS Blocked';
+                    showCorsWarning();
+                    showNotification('❌ CORS Policy Blocked Connection - Click "Learn More" for solutions', 'error');
+                    
+                    // Show detailed CORS guidance after a delay
+                    setTimeout(() => {
+                        showNotification('💡 Try: Browser CORS extension, localhost, or different browser', 'info');
+                    }, 3000);
+                } else {
+                    document.getElementById('syncStatus').textContent = 'Mode Demo - Connection Failed';
+                    showNotification(`Connection failed: ${error.message}. Using demo mode.`, 'error');
+                }
+                
+                // Fall back to enhanced demo mode
                 loadDemoData();
             }
         }
@@ -691,4 +802,270 @@
                 document.getElementById('syncStatus').textContent = 'Mengambil file...';
                 
                 // Get messages from the chat/channel
-                const response = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?limit=100`)
+                const response = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?limit=100`);
+                const data = await response.json();
+                
+                if (data.ok) {
+                    const messages = data.result;
+                    const telegramFiles = [];
+                    
+                    messages.forEach(update => {
+                        if (update.message && update.message.document) {
+                            const doc = update.message.document;
+                            telegramFiles.push({
+                                id: doc.file_id,
+                                name: doc.file_name || 'Unknown',
+                                size: formatFileSize(doc.file_size || 0),
+                                date: formatDate(update.message.date),
+                                type: getFileType(doc.file_name || ''),
+                                category: getFileCategory(doc.file_name || ''),
+                                url: `https://api.telegram.org/bot${botToken}/getFile?file_id=${doc.file_id}`
+                            });
+                        }
+                    });
+                    
+                    files = telegramFiles;
+                    renderFiles();
+                    document.getElementById('syncStatus').textContent = `${files.length} file ditemukan`;
+                    showNotification(`Berhasil memuat ${files.length} file`, 'success');
+                } else {
+                    throw new Error(data.description || 'Gagal mengambil file');
+                }
+            } catch (error) {
+                console.error('Fetch files error:', error);
+                
+                // Detect CORS error specifically
+                const isCorsError = error.message.includes('CORS') || 
+                                  error.message.includes('Cross-Origin') ||
+                                  error.message.includes('Network Error') ||
+                                  error.name === 'TypeError' ||
+                                  !error.message;
+                
+                if (isCorsError) {
+                    document.getElementById('syncStatus').textContent = 'Mode Demo - CORS Blocked';
+                    showCorsWarning();
+                    showNotification('❌ CORS blocked file fetch - Using demo mode', 'error');
+                } else {
+                    document.getElementById('syncStatus').textContent = 'Mode Demo - Fetch Failed';
+                    showNotification(`Failed to fetch files: ${error.message}`, 'error');
+                }
+                
+                // Fall back to demo mode
+                loadDemoData();
+            }
+        }
+
+        // Utility functions
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function formatDate(timestamp) {
+            const date = new Date(timestamp * 1000);
+            return date.toLocaleDateString('id-ID');
+        }
+
+        function getFileType(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const types = {
+                'pdf': 'pdf',
+                'doc': 'doc', 'docx': 'doc', 'ppt': 'doc', 'pptx': 'doc', 'xls': 'doc', 'xlsx': 'doc',
+                'jpg': 'img', 'jpeg': 'img', 'png': 'img', 'gif': 'img', 'bmp': 'img', 'svg': 'img',
+                'mp4': 'vid', 'avi': 'vid', 'mov': 'vid', 'wmv': 'vid', 'flv': 'vid',
+                'mp3': 'aud', 'wav': 'aud', 'flac': 'aud', 'aac': 'aud',
+                'zip': 'arc', 'rar': 'arc', '7z': 'arc', 'tar': 'arc', 'gz': 'arc'
+            };
+            return types[ext] || 'other';
+        }
+
+        function getFileCategory(filename) {
+            const type = getFileType(filename);
+            const categories = {
+                'pdf': 'documents', 'doc': 'documents',
+                'img': 'images',
+                'vid': 'videos', 'aud': 'videos',
+                'arc': 'others', 'other': 'others'
+            };
+            return categories[type] || 'others';
+        }
+
+        // Render files in the UI
+        function renderFiles() {
+            const fileList = document.getElementById('fileList');
+            const emptyState = document.getElementById('emptyState');
+            
+            let filteredFiles = currentFilter === 'all' ? files : files.filter(file => file.category === currentFilter);
+            
+            if (filteredFiles.length === 0) {
+                fileList.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            fileList.style.display = 'block';
+            emptyState.style.display = 'none';
+            
+            fileList.innerHTML = filteredFiles.map(file => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon ${file.type}">${getFileIcon(file.type)}</div>
+                        <div class="file-name">${file.name}</div>
+                    </div>
+                    <div class="file-size">${file.size}</div>
+                    <div class="file-date">${file.date}</div>
+                    <div class="file-actions">
+                        <button class="action-btn" onclick="downloadFile('${file.id}', '${file.name}')">📥</button>
+                        <button class="action-btn" onclick="shareFile('${file.id}', '${file.name}')">🔗</button>
+                        <button class="action-btn" onclick="deleteFile('${file.id}')">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getFileIcon(type) {
+            const icons = {
+                'pdf': 'PDF',
+                'doc': 'DOC',
+                'img': '🖼️',
+                'vid': '🎥',
+                'aud': '🎵',
+                'arc': '📦',
+                'other': '📄'
+            };
+            return icons[type] || '📄';
+        }
+
+        // File actions
+        function downloadFile(fileId, fileName) {
+            if (isDemo) {
+                showNotification('Mode demo - Download tidak tersedia', 'info');
+                return;
+            }
+            showNotification(`Mengunduh ${fileName}...`, 'info');
+            // In real implementation, would handle file download
+        }
+
+        function shareFile(fileId, fileName) {
+            if (isDemo) {
+                showNotification('Mode demo - Share tidak tersedia', 'info');
+                return;
+            }
+            showNotification(`Link berbagi untuk ${fileName} disalin`, 'success');
+            // In real implementation, would generate share link
+        }
+
+        function deleteFile(fileId) {
+            if (isDemo) {
+                showNotification('Mode demo - Hapus tidak tersedia', 'info');
+                return;
+            }
+            if (confirm('Yakin ingin menghapus file ini?')) {
+                files = files.filter(file => file.id !== fileId);
+                renderFiles();
+                showNotification('File berhasil dihapus', 'success');
+            }
+        }
+
+        // Folder selection
+        function selectFolder(category) {
+            currentFilter = category;
+            
+            // Update active folder
+            document.querySelectorAll('.folder-item').forEach(item => item.classList.remove('active'));
+            event.target.closest('.folder-item').classList.add('active');
+            
+            // Update breadcrumb
+            const folderNames = {
+                'all': 'Semua File',
+                'documents': 'Dokumen',
+                'images': 'Gambar',
+                'videos': 'Video',
+                'others': 'Lainnya'
+            };
+            document.getElementById('currentFolder').textContent = folderNames[category];
+            
+            renderFiles();
+        }
+
+        // Refresh files
+        function refreshFiles() {
+            if (isDemo) {
+                showNotification('Mode demo - Refresh tidak tersedia', 'info');
+                return;
+            }
+            fetchTelegramFiles();
+        }
+
+        // Show upload guide modal
+        function showUploadGuide() {
+            document.getElementById('uploadModal').classList.add('show');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('uploadModal').classList.remove('show');
+        }
+
+        // Show CORS information modal
+        function showCorsInfo() {
+            document.getElementById('corsModal').classList.add('show');
+        }
+
+        // Close CORS modal
+        function closeCorsModal() {
+            document.getElementById('corsModal').classList.remove('show');
+        }
+
+        // Show CORS warning
+        function showCorsWarning() {
+            document.getElementById('corsWarning').classList.add('show');
+        }
+
+        // Hide CORS warning
+        function hideCorsWarning() {
+            document.getElementById('corsWarning').classList.remove('show');
+        }
+
+        // Open CORS extension link
+        function openCorsExtension() {
+            window.open('https://chrome.google.com/webstore/search/cors%20unblock', '_blank');
+        }
+
+        // Open Telegram
+        function openTelegram() {
+            window.open('https://web.telegram.org', '_blank');
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+
+        // Close modal on ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeCorsModal();
+            }
+        });
+
+        // Refresh on F5 or Ctrl+R
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+                e.preventDefault();
+                refreshFiles();
+            }
+        });
+    </script>
+</body>
+</html>
