@@ -361,106 +361,17 @@
             position: fixed;
             top: 20px;
             right: 20px;
+            background: #4caf50;
+            color: white;
             padding: 1rem 1.5rem;
             border-radius: 4px;
             z-index: 1001;
             transform: translateX(400px);
             transition: transform 0.3s;
-            color: white;
-            font-weight: 500;
         }
 
         .notification.show {
             transform: translateX(0);
-        }
-
-        .notification.success {
-            background: #4caf50;
-        }
-
-        .notification.error {
-            background: #f44336;
-        }
-
-        .notification.info {
-            background: #2196f3;
-        }
-
-        .notification.warning {
-            background: #ff9800;
-        }
-
-        .cors-warning {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            color: #856404;
-        }
-
-        .cors-warning-title {
-            font-weight: 600;
-            color: #b8860b;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .cors-warning-content {
-            font-size: 0.85rem;
-            line-height: 1.4;
-        }
-
-        .cors-solutions {
-            margin-top: 0.75rem;
-            padding-left: 1rem;
-        }
-
-        .cors-solutions li {
-            margin-bottom: 0.25rem;
-        }
-
-        .cors-solutions a {
-            color: #b8860b;
-            text-decoration: underline;
-        }
-
-        .modal code {
-            background: #f5f5f5;
-            padding: 0.2rem 0.4rem;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.8rem;
-        }
-
-        .loading {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        @media (max-width: 768px) {
-            .main-container {
-                flex-direction: column;
-            }
-            
-            .sidebar {
-                width: 100%;
-                height: auto;
-            }
-            
-            .files-header {
-                grid-template-columns: 1fr auto;
-            }
-            
-            .file-item {
-                grid-template-columns: 1fr auto;
-            }
-            
-            .file-size, .file-date {
-                display: none;
-            }
         }
     </style>
 </head>
@@ -479,22 +390,6 @@
     <div class="main-container">
         <div class="sidebar">
             <div class="sidebar-section">
-                <div class="cors-warning" id="corsWarning" style="display: none;">
-                    <div class="cors-warning-title">
-                        <span>⚠️</span>
-                        <span>CORS Limitation Detected</span>
-                    </div>
-                    <div class="cors-warning-content">
-                        <p>Your browser is blocking direct API calls to Telegram due to CORS (Cross-Origin Resource Sharing) restrictions.</p>
-                        <p><strong>Alternative Solutions:</strong></p>
-                        <ul class="cors-solutions">
-                            <li>Install a <a href="#" onclick="showCorsHelp()">CORS browser extension</a></li>
-                            <li>Run the app on <a href="#" onclick="showLocalHelp()">localhost</a></li>
-                            <li>Use the <a href="#" onclick="showDemoFeatures()">enhanced demo mode</a></li>
-                        </ul>
-                    </div>
-                </div>
-
                 <div class="telegram-setup">
                     <div class="setup-title">Setup Bot Telegram</div>
                     <div class="setup-steps">
@@ -598,65 +493,437 @@
         </div>
     </div>
 
-    <!-- CORS Help Modal -->
-    <div class="modal" id="corsHelpModal">
-        <div class="modal-content">
-            <div class="modal-header">🔧 CORS Solutions</div>
-            <div class="modal-body">
-                <p><strong>Option 1: Browser Extension (Easiest)</strong></p>
-                <ul style="margin-left: 1rem; margin-bottom: 1rem;">
-                    <li>Install "CORS Unblock" or "Disable CORS" extension</li>
-                    <li>Enable the extension for this site</li>
-                    <li>Refresh the page and try connecting again</li>
-                </ul>
-                
-                <p><strong>Option 2: Chrome with Disabled Security</strong></p>
-                <ul style="margin-left: 1rem; margin-bottom: 1rem;">
-                    <li>Close all Chrome windows</li>
-                    <li>Run: <code>chrome --disable-web-security --user-data-dir=/tmp/chrome</code></li>
-                    <li>Open this site in the new Chrome window</li>
-                </ul>
-                
-                <p><strong>Option 3: Use Firefox Developer Edition</strong></p>
-                <ul style="margin-left: 1rem;">
-                    <li>Firefox has more relaxed CORS policies for development</li>
-                    <li>Install Firefox Developer Edition</li>
-                    <li>Open this site and try connecting</li>
-                </ul>
-                
-                <div style="margin-top: 1rem; padding: 0.75rem; background: #ffebee; border-radius: 4px; font-size: 0.85rem;">
-                    <strong>⚠️ Security Note:</strong> These methods disable browser security features. Only use for testing and development.
-                </div>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-sec" onclick="closeModal()">Tutup</button>
-            </div>
-        </div>
-    </div>
+    <div class="notification" id="notification"></div>
 
-    <!-- Local Development Help Modal -->
-    <div class="modal" id="localHelpModal">
-        <div class="modal-content">
-            <div class="modal-header">💻 Local Development Setup</div>
-            <div class="modal-body">
-                <p><strong>Why Localhost Works Better:</strong></p>
-                <p style="margin-bottom: 1rem;">Browsers have relaxed CORS policies for localhost, making API calls more likely to succeed.</p>
+    <script>
+        let botToken = '';
+        let chatId = '';
+        let files = [];
+        let currentFilter = 'all';
+
+        // Sample data for demo
+        const sampleFiles = [
+            {
+                id: 1,
+                name: "Laporan_Q4_2024.pdf",
+                size: "2.3 MB",
+                date: "2024-12-15",
+                type: "pdf",
+                category: "documents"
+            },
+            {
+                id: 2,
+                name: "Presentasi_Marketing.pptx",
+                size: "8.7 MB", 
+                date: "2024-12-14",
+                type: "doc",
+                category: "documents"
+            },
+            {
+                id: 3,
+                name: "Screenshot_Dashboard.png",
+                size: "1.2 MB",
+                date: "2024-12-13",
+                type: "img",
+                category: "images"
+            },
+            {
+                id: 4,
+                name: "Video_Tutorial.mp4",
+                size: "45.8 MB",
+                date: "2024-12-12",
+                type: "vid",
+                category: "videos"
+            },
+            {
+                id: 5,
+                name: "Database_Backup.zip",
+                size: "156.2 MB",
+                date: "2024-12-11",
+                type: "arc",
+                category: "others"
+            }
+        ];
+
+        async function connectBot() {
+            botToken = document.getElementById('botToken').value;
+            chatId = document.getElementById('chatId').value;
+
+            if (!botToken || !chatId) {
+                showNotification('Mohon isi Bot Token dan Chat ID', 'error');
+                return;
+            }
+
+            document.getElementById('syncStatus').textContent = 'Menghubungkan...';
+            
+            try {
+                // Test bot connection
+                const response = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
+                const data = await response.json();
                 
-                <p><strong>Setup Instructions:</strong></p>
-                <ol style="margin-left: 1rem; margin-bottom: 1rem;">
-                    <li>Download the source code from GitHub</li>
-                    <li>Extract to a local folder</li>
-                    <li>Open terminal/command prompt in that folder</li>
-                    <li>Run a local server:
-                        <ul style="margin-left: 1rem; margin-top: 0.5rem;">
-                            <li><code>python -m http.server 8000</code> (Python)</li>
-                            <li><code>npx serve .</code> (Node.js)</li>
-                            <li><code>php -S localhost:8000</code> (PHP)</li>
-                        </ul>
-                    </li>
-                    <li>Open <code>http://localhost:8000</code> in your browser</li>
-                </ol>
+                if (data.ok) {
+                    document.getElementById('syncStatus').textContent = 'Terhubung';
+                    showNotification(`Bot berhasil terhubung! (@${data.result.username})`);
+                    
+                    // Load files from Telegram
+                    await fetchTelegramFiles();
+                } else {
+                    throw new Error(data.description || 'Token tidak valid');
+                }
+            } catch (error) {
+                document.getElementById('syncStatus').textContent = 'Koneksi gagal';
+                showNotification(`Error: ${error.message}`, 'error');
+                console.error('Connection error:', error);
+            }
+        }
+
+        function selectFolder(folder) {
+            currentFilter = folder;
+            
+            // Update active state
+            document.querySelectorAll('.folder-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.closest('.folder-item').classList.add('active');
+
+            // Update breadcrumb
+            const folderNames = {
+                'all': 'Semua File',
+                'documents': 'Dokumen', 
+                'images': 'Gambar',
+                'videos': 'Video',
+                'others': 'Lainnya'
+            };
+            document.getElementById('currentFolder').textContent = folderNames[folder];
+
+            renderFiles();
+        }
+
+        function renderFiles() {
+            const fileList = document.getElementById('fileList');
+            const emptyState = document.getElementById('emptyState');
+            
+            let filteredFiles = files;
+            
+            if (currentFilter !== 'all') {
+                filteredFiles = files.filter(file => file.category === currentFilter);
+            }
+
+            if (filteredFiles.length === 0) {
+                fileList.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            fileList.style.display = 'block';
+            emptyState.style.display = 'none';
+
+            fileList.innerHTML = filteredFiles.map(file => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon ${file.type}">${getFileIcon(file.type)}</div>
+                        <div class="file-name">${file.name}</div>
+                    </div>
+                    <div class="file-size">${file.size}</div>
+                    <div class="file-date">${formatDate(file.date)}</div>
+                    <div class="file-actions">
+                        <button class="action-btn" onclick="downloadFile(${file.id})">⬇️</button>
+                        <button class="action-btn" onclick="shareFile(${file.id})">🔗</button>
+                        <button class="action-btn" onclick="deleteFile(${file.id})">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getFileIcon(type) {
+            const icons = {
+                'pdf': 'PDF',
+                'doc': 'DOC', 
+                'img': 'IMG',
+                'vid': 'VID',
+                'aud': 'AUD',
+                'arc': 'ZIP',
+                'other': '📄'
+            };
+            return icons[type] || icons.other;
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('id-ID');
+        }
+
+        async function fetchTelegramFiles() {
+            if (!botToken || !chatId) {
+                showNotification('Bot belum terhubung', 'error');
+                return;
+            }
+
+            try {
+                document.getElementById('syncStatus').textContent = 'Mengambil file...';
                 
-                <p><strong>Alternative: Use GitHub Codespaces</strong></p>
-                <ul style="margin-left: 1rem;">
-   
+                // Get messages from the chat/channel
+                const response = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?limit=100`);
+                const data = await response.json();
+                
+                if (!data.ok) {
+                    throw new Error(data.description || 'Gagal mengambil data');
+                }
+
+                // Filter messages that contain files
+                const fileMessages = data.result.filter(update => {
+                    const message = update.message;
+                    return message && message.chat.id == chatId && (
+                        message.document || 
+                        message.photo || 
+                        message.video || 
+                        message.audio || 
+                        message.voice ||
+                        message.video_note ||
+                        message.animation
+                    );
+                });
+
+                // Convert to file objects
+                files = fileMessages.map(update => {
+                    const message = update.message;
+                    let fileInfo = {};
+                    
+                    if (message.document) {
+                        fileInfo = {
+                            type: getFileTypeFromName(message.document.file_name),
+                            name: message.document.file_name,
+                            size: formatFileSize(message.document.file_size),
+                            file_id: message.document.file_id,
+                            mime_type: message.document.mime_type
+                        };
+                    } else if (message.photo) {
+                        const photo = message.photo[message.photo.length - 1]; // Get largest size
+                        fileInfo = {
+                            type: 'img',
+                            name: `Photo_${message.message_id}.jpg`,
+                            size: formatFileSize(photo.file_size),
+                            file_id: photo.file_id,
+                            mime_type: 'image/jpeg'
+                        };
+                    } else if (message.video) {
+                        fileInfo = {
+                            type: 'vid',
+                            name: message.video.file_name || `Video_${message.message_id}.mp4`,
+                            size: formatFileSize(message.video.file_size),
+                            file_id: message.video.file_id,
+                            mime_type: message.video.mime_type
+                        };
+                    } else if (message.audio) {
+                        fileInfo = {
+                            type: 'aud',
+                            name: message.audio.file_name || `Audio_${message.message_id}.mp3`,
+                            size: formatFileSize(message.audio.file_size),
+                            file_id: message.audio.file_id,
+                            mime_type: message.audio.mime_type
+                        };
+                    } else if (message.voice) {
+                        fileInfo = {
+                            type: 'aud',
+                            name: `Voice_${message.message_id}.ogg`,
+                            size: formatFileSize(message.voice.file_size),
+                            file_id: message.voice.file_id,
+                            mime_type: 'audio/ogg'
+                        };
+                    } else if (message.animation) {
+                        fileInfo = {
+                            type: 'vid',
+                            name: message.animation.file_name || `Animation_${message.message_id}.gif`,
+                            size: formatFileSize(message.animation.file_size),
+                            file_id: message.animation.file_id,
+                            mime_type: message.animation.mime_type
+                        };
+                    }
+
+                    return {
+                        id: message.message_id,
+                        ...fileInfo,
+                        date: new Date(message.date * 1000).toISOString().split('T')[0],
+                        category: getCategoryFromType(fileInfo.type),
+                        caption: message.caption || '',
+                        telegram_url: `https://t.me/c/${Math.abs(chatId).toString().slice(4)}/${message.message_id}`
+                    };
+                });
+
+                // Sort by date (newest first)
+                files.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                document.getElementById('syncStatus').textContent = 'Terhubung';
+                showNotification(`Berhasil memuat ${files.length} file dari Telegram`);
+                renderFiles();
+
+            } catch (error) {
+                document.getElementById('syncStatus').textContent = 'Error sync';
+                showNotification(`Error saat mengambil file: ${error.message}`, 'error');
+                console.error('Fetch error:', error);
+            }
+        }
+
+        function getFileTypeFromName(fileName) {
+            if (!fileName) return 'other';
+            
+            const ext = fileName.split('.').pop().toLowerCase();
+            const typeMap = {
+                // Documents
+                'pdf': 'pdf',
+                'doc': 'doc', 'docx': 'doc', 'odt': 'doc',
+                'xls': 'doc', 'xlsx': 'doc', 'ods': 'doc',
+                'ppt': 'doc', 'pptx': 'doc', 'odp': 'doc',
+                'txt': 'doc', 'rtf': 'doc',
+                
+                // Images
+                'jpg': 'img', 'jpeg': 'img', 'png': 'img', 'gif': 'img',
+                'bmp': 'img', 'webp': 'img', 'svg': 'img', 'ico': 'img',
+                
+                // Videos
+                'mp4': 'vid', 'avi': 'vid', 'mkv': 'vid', 'mov': 'vid',
+                'wmv': 'vid', 'flv': 'vid', 'webm': 'vid', '3gp': 'vid',
+                
+                // Audio
+                'mp3': 'aud', 'wav': 'aud', 'flac': 'aud', 'aac': 'aud',
+                'ogg': 'aud', 'wma': 'aud', 'm4a': 'aud',
+                
+                // Archives
+                'zip': 'arc', 'rar': 'arc', '7z': 'arc', 'tar': 'arc',
+                'gz': 'arc', 'bz2': 'arc', 'xz': 'arc'
+            };
+            
+            return typeMap[ext] || 'other';
+        }
+
+        function getCategoryFromType(type) {
+            const categoryMap = {
+                'pdf': 'documents',
+                'doc': 'documents', 
+                'img': 'images',
+                'vid': 'videos',
+                'aud': 'others',
+                'arc': 'others',
+                'other': 'others'
+            };
+            return categoryMap[type] || 'others';
+        }
+
+        function formatFileSize(bytes) {
+            if (!bytes) return '0 B';
+            
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function showUploadGuide() {
+            document.getElementById('uploadModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('uploadModal').classList.remove('show');
+        }
+
+        function openTelegram() {
+            if (chatId) {
+                // Open Telegram chat - this would work on mobile/desktop with Telegram installed
+                window.open(`tg://resolve?domain=YourBotUsername`, '_blank');
+            } else {
+                showNotification('Mohon hubungkan bot terlebih dahulu', 'error');
+            }
+        }
+
+        async function downloadFile(fileId) {
+            const file = files.find(f => f.id === fileId);
+            if (!file) return;
+            
+            try {
+                showNotification(`Mengunduh ${file.name}...`);
+                
+                // Get file path from Telegram
+                const fileResponse = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${file.file_id}`);
+                const fileData = await fileResponse.json();
+                
+                if (fileData.ok) {
+                    const fileUrl = `https://api.telegram.org/file/bot${botToken}/${fileData.result.file_path}`;
+                    
+                    // Download file
+                    const downloadResponse = await fetch(fileUrl);
+                    const blob = await downloadResponse.blob();
+                    
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = file.name;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    showNotification(`${file.name} berhasil diunduh!`);
+                } else {
+                    throw new Error(fileData.description || 'Gagal mendapatkan file');
+                }
+            } catch (error) {
+                showNotification(`Error mengunduh file: ${error.message}`, 'error');
+                console.error('Download error:', error);
+            }
+        }
+
+        function shareFile(fileId) {
+            const file = files.find(f => f.id === fileId);
+            if (!file) return;
+            
+            // Create shareable Telegram link
+            let shareLink = '';
+            if (chatId.toString().startsWith('-100')) {
+                // Channel/supergroup
+                const channelId = Math.abs(chatId).toString().slice(4);
+                shareLink = `https://t.me/c/${channelId}/${fileId}`;
+            } else {
+                // Regular chat - use file_id for sharing
+                shareLink = `tg://resolve?domain=YourBotUsername&post=${fileId}`;
+            }
+            
+            navigator.clipboard.writeText(shareLink).then(() => {
+                showNotification('Link berbagi disalin ke clipboard!');
+            }).catch(() => {
+                // Fallback if clipboard API fails
+                const textArea = document.createElement('textarea');
+                textArea.value = shareLink;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showNotification('Link berbagi disalin ke clipboard!');
+            });
+        }
+
+        function deleteFile(fileId) {
+            if (confirm('Yakin ingin menghapus file ini?')) {
+                files = files.filter(f => f.id !== fileId);
+                renderFiles();
+                showNotification('File berhasil dihapus');
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize - don't load sample files anymore
+        // renderFiles();
+    </script>
+</body>
+</html>
