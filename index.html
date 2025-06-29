@@ -767,13 +767,7 @@ async function fetchTelegramFiles() {
                 showNotification(`Berhasil memuat ${files.length} file dari Telegram`);
                 renderFiles();
 
-            } catch (error) {
-                document.getElementById('syncStatus').textContent = 'Error sync';
-                showNotification(`Error saat mengambil file: ${error.message}`, 'error');
-                console.error('Fetch error:', error);
-            }
-        }
-
+            
         function getFileTypeFromName(fileName) {
             if (!fileName) return 'other';
             
