@@ -453,6 +453,16 @@
             .file-size, .file-date {
                 display: none;
             }
+            
+            .cors-warning {
+                flex-direction: column;
+                gap: 0.5rem;
+                padding: 1rem;
+            }
+            
+            .cors-warning-actions {
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -680,6 +690,12 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadSavedConfig();
             loadDemoData();
+            
+            // Show CORS warning by default if no saved config
+            const savedToken = localStorage.getItem('telegram_bot_token');
+            if (!savedToken) {
+                showCorsWarning();
+            }
         });
 
         // Load saved configuration from localStorage
@@ -769,6 +785,7 @@
                 const isCorsError = error.message.includes('CORS') || 
                                   error.message.includes('Cross-Origin') ||
                                   error.message.includes('Network Error') ||
+                                  error.message.includes('Failed to fetch') ||
                                   error.name === 'TypeError' ||
                                   !error.message; // Often CORS errors have no message
                 
@@ -838,6 +855,7 @@
                 const isCorsError = error.message.includes('CORS') || 
                                   error.message.includes('Cross-Origin') ||
                                   error.message.includes('Network Error') ||
+                                  error.message.includes('Failed to fetch') ||
                                   error.name === 'TypeError' ||
                                   !error.message;
                 
