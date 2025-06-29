@@ -671,7 +671,7 @@
                 }
 
                 // Filter messages that contain files
-                const fileMessages = data.result
+const fileMessages = data.result
   .map(update => update.message || update.channel_post)
   .filter(message =>
     message &&
