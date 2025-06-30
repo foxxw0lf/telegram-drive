@@ -661,7 +661,7 @@ function renderFiles() {
             <div class="file-actions">
                 <button class="action-btn" onclick="downloadFile(${file.id})">⬇️</button>
                 <button class="action-btn" onclick="shareFile(${file.id})">🔗</button>
-                <button class="btn btn-pri" onclick="openTelegram()">💬 Chat Telegram Chat</button>
+                <button class="btn btn-sec" onclick="goToChat()">Menuju Chat</button>
             </div>
         </div>
     `).join('');
@@ -992,23 +992,25 @@ async function downloadFile(fileId) {
                 notification.classList.remove('show');
             }, 3000);
         }
-function openTelegram() {
-    if (chatId) {
-        let url = '';
-        if (chatId.toString().startsWith('-100')) {
-            // channel atau supergroup, hanya bisa membuka lewat web (tidak ada deep link ke chat id grup)
-            url = `https://t.me/c/${Math.abs(chatId).toString().slice(4)}`;
-        } else if (!isNaN(chatId)) {
-            // chat pribadi - gunakan tg://user?id=
-            url = `tg://user?id=${chatId}`;
-        } else {
-            // jika username bot, gunakan tg://resolve?domain=
-            url = `tg://resolve?domain=${chatId}`;
-        }
-        window.open(url, '_blank');
-    } else {
+function goToChat() {
+    if (!chatId) {
         showNotification('Mohon hubungkan bot terlebih dahulu', 'error');
+        return;
     }
+    let chatLink = '';
+    if (chatId.toString().startsWith('-100')) {
+        // Channel/supergroup: buka di web, Telegram TIDAK menyediakan tg:// untuk /c/id
+        const channelId = Math.abs(chatId).toString().slice(4);
+        chatLink = `https://t.me/c/${channelId}`;
+    } else if (!isNaN(chatId)) {
+        // Chat pribadi: tidak ada direct link jika hanya chatId (tanpa username)
+        // Mungkin bisa gunakan: tg://user?id=<chatId>
+        chatLink = `tg://user?id=${chatId}`;
+    } else {
+        // Username (bot/user/channel)
+        chatLink = `tg://resolve?domain=${chatId}`;
+    }
+    window.open(chatLink, '_blank');
 }
 
         // Initialize - don't load sample files anymore
