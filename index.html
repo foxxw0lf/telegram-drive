@@ -651,12 +651,10 @@ function renderFiles() {
 
     fileList.innerHTML = filteredFiles.map(file => `
         <div class="file-item">
-            <div class="file-info">
-                ${file.type === 'img' ? 
-                    `<img src="https://api.telegram.org/file/bot${botToken}/${file.file_id}" alt="${file.name}" style="width:36px;height:36px;object-fit:cover;border-radius:4px;border:1px solid #eee;margin-right:0.5rem;">` 
-                    : `<div class="file-icon ${file.type}">${getFileIcon(file.type)}</div>`
-                }
-                <div class="file-name">${file.name}</div>
+                  <div class="file-info">
+                        <div class="file-icon ${file.type}">${getFileIcon(file.type)}</div>
+                        <div class="file-name">${file.name}</div>
+                    </div>
             </div>
             <div class="file-size">${file.size}</div>
             <div class="file-date">${formatDate(file.date)}</div>
