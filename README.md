@@ -4,6 +4,7 @@ Web-based file manager for Telegram bots. Manage and organize files stored in yo
 
 ## 🌟 Live Demo
 **[https://foxxw0lf.github.io/telegram-drive/](https://foxxw0lf.github.io/telegram-drive/)**
+**[https://telegram-drive-iota.vercel.app/](https://telegram-drive-iota.vercel.app/)**
 
 ## ✨ Features
 
