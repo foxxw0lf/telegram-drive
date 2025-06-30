@@ -500,7 +500,19 @@
         let chatId = '';
         let files = [];
         let currentFilter = 'all';
-
+        // Load saved botToken and chatId from localStorage when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedToken = localStorage.getItem('telegramDriveBotToken');
+            const savedChatId = localStorage.getItem('telegramDriveChatId');
+            if (savedToken) {
+                document.getElementById('botToken').value = savedToken;
+                botToken = savedToken;
+            }
+            if (savedChatId) {
+                document.getElementById('chatId').value = savedChatId;
+                chatId = savedChatId;
+            }
+        });
         // Sample data for demo
         const sampleFiles = [
             {
@@ -545,37 +557,41 @@
             }
         ];
 
-        async function connectBot() {
-            botToken = document.getElementById('botToken').value;
-            chatId = document.getElementById('chatId').value;
+async function connectBot() {
+        botToken = document.getElementById('botToken').value;
+        chatId = document.getElementById('chatId').value;
 
-            if (!botToken || !chatId) {
-                showNotification('Mohon isi Bot Token dan Chat ID', 'error');
-                return;
-            }
-
-            document.getElementById('syncStatus').textContent = 'Menghubungkan...';
-            
-            try {
-                // Test bot connection
-                const response = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
-                const data = await response.json();
-                
-                if (data.ok) {
-                    document.getElementById('syncStatus').textContent = 'Terhubung';
-                    showNotification(`Bot berhasil terhubung! (@${data.result.username})`);
-                    
-                    // Load files from Telegram
-                    await fetchTelegramFiles();
-                } else {
-                    throw new Error(data.description || 'Token tidak valid');
-                }
-            } catch (error) {
-                document.getElementById('syncStatus').textContent = 'Koneksi gagal';
-                showNotification(`Error: ${error.message}`, 'error');
-                console.error('Connection error:', error);
-            }
+        if (!botToken || !chatId) {
+            showNotification('Mohon isi Bot Token dan Chat ID', 'error');
+            return;
         }
+
+        // Simpan ke LocalStorage
+        localStorage.setItem('telegramDriveBotToken', botToken);
+        localStorage.setItem('telegramDriveChatId', chatId);
+
+        document.getElementById('syncStatus').textContent = 'Menghubungkan...';
+        
+        try {
+            // Test bot connection
+            const response = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
+            const data = await response.json();
+            
+            if (data.ok) {
+                document.getElementById('syncStatus').textContent = 'Terhubung';
+                showNotification(`Bot berhasil terhubung! (@${data.result.username})`);
+                
+                // Load files from Telegram
+                await fetchTelegramFiles();
+            } else {
+                throw new Error(data.description || 'Token tidak valid');
+            }
+        } catch (error) {
+            document.getElementById('syncStatus').textContent = 'Koneksi gagal';
+            showNotification(`Error: ${error.message}`, 'error');
+            console.error('Connection error:', error);
+        }
+    }
 
         function selectFolder(folder) {
             currentFilter = folder;
