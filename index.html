@@ -914,7 +914,9 @@ async function fetchTelegramFiles() {
                 showNotification('File berhasil dihapus');
             }
         }
-
+        function refreshFiles() {
+            fetchTelegramFiles();
+        }
         function showNotification(message, type = 'success') {
             const notification = document.getElementById('notification');
             notification.textContent = message;
