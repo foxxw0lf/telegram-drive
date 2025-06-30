@@ -16,7 +16,6 @@ Web-based file manager for Telegram bots. Manage and organize files stored in yo
 - **View**: Browse all files with thumbnails and metadata
 - **Download**: Direct download from Telegram servers
 - **Share**: Generate share links for files
-- **Delete**: Remove files from the interface
 - **Categorize**: Auto-sort files into Documents, Images, Videos, Others
 
 ### 🎨 Modern Interface
@@ -58,6 +57,7 @@ Web-based file manager for Telegram bots. Manage and organize files stored in yo
 2. Enter your **Bot Token** and **Chat ID**
 3. Click **"Hubungkan"** (Connect)
 4. Start uploading files to your Telegram chat!
+5. Bot Token and Chat ID is saved on localstorage
 
 ## 📱 How to Upload Files
 
