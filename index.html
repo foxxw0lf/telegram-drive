@@ -992,18 +992,18 @@ async function downloadFile(fileId) {
                 notification.classList.remove('show');
             }, 3000);
         }
-        function openTelegram() {
+function openTelegram() {
     if (chatId) {
         let url = '';
         if (chatId.toString().startsWith('-100')) {
-            // channel atau supergroup
+            // channel atau supergroup, hanya bisa membuka lewat web (tidak ada deep link ke chat id grup)
             url = `https://t.me/c/${Math.abs(chatId).toString().slice(4)}`;
         } else if (!isNaN(chatId)) {
-            // chat pribadi (harus tahu username jika ingin langsung ke user)
+            // chat pribadi - gunakan tg://user?id=
             url = `tg://user?id=${chatId}`;
         } else {
-            // fallback ke bot
-            url = `https://t.me/${chatId}`;
+            // jika username bot, gunakan tg://resolve?domain=
+            url = `tg://resolve?domain=${chatId}`;
         }
         window.open(url, '_blank');
     } else {
