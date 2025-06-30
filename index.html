@@ -870,20 +870,15 @@ async function downloadFile(fileId) {
         if (fileData.ok) {
             const fileUrl = `https://api.telegram.org/file/bot${botToken}/${fileData.result.file_path}`;
             
-            // Download file as blob to get correct file name
-            const downloadResponse = await fetch(fileUrl);
-            const blob = await downloadResponse.blob();
-            
-            // Create download link with correct filename
-            const url = window.URL.createObjectURL(blob);
+            // Use direct link for download (bypass CORS)
             const a = document.createElement('a');
-            a.href = url;
-            a.download = file.name; // This will set the correct filename
+            a.href = fileUrl;
+            a.download = file.name;
+            a.target = '_blank'; // optional, opens in new tab
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            
+
             showNotification(`${file.name} berhasil diunduh!`);
         } else {
             throw new Error(fileData.description || 'Gagal mendapatkan file');
