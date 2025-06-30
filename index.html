@@ -875,6 +875,31 @@ async function downloadFile(fileId) {
     const file = files.find(f => f.id === fileId);
     if (!file) return;
 
+    // Cek size file jika tipe Telegram document
+    // file.size: "12.2 MB" -> ubah ke MB number
+    let sizeMB = 0;
+    if (file.size) {
+        const match = file.size.match(/([\d.]+)\s*([A-Za-z]+)/);
+        if (match) {
+            const num = parseFloat(match[1]);
+            const unit = match[2].toUpperCase();
+            if (unit === 'GB') sizeMB = num * 1024;
+            else if (unit === 'MB') sizeMB = num;
+            else if (unit === 'KB') sizeMB = num / 1024;
+            else sizeMB = num / (1024 * 1024);
+        }
+    }
+
+    // Telegram Bot API limit 20MB
+    if (sizeMB > 20) {
+        showNotification(
+            'File terlalu besar (>20MB). Bot API tidak bisa mengunduh file ini. ' +
+            'Gunakan Telegram desktop/mobile langsung atau setup Local Bot API/MTProto untuk file besar.',
+            'error'
+        );
+        return;
+    }
+
     try {
         showNotification(`Mengunduh ${file.name}...`);
 
@@ -882,22 +907,36 @@ async function downloadFile(fileId) {
         const fileResponse = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${file.file_id}`);
         const fileData = await fileResponse.json();
 
-        if (fileData.ok) {
-            const fileUrl = `https://api.telegram.org/file/bot${botToken}/${fileData.result.file_path}`;
-            
-            // Use direct link for download (bypass CORS)
-            const a = document.createElement('a');
-            a.href = fileUrl;
-            a.download = file.name;
-            a.target = '_blank'; // optional, opens in new tab
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-
-            showNotification(`${file.name} berhasil diunduh!`);
-        } else {
+        if (!fileData.ok) {
+            if (
+                fileData.error_code === 400 &&
+                fileData.description &&
+                fileData.description.toLowerCase().includes("file is too big")
+            ) {
+                showNotification(
+                    'File terlalu besar untuk diunduh lewat Bot API (maks 20MB). ' +
+                    'Gunakan Telegram langsung atau Local Bot API server/MTProto untuk file besar.',
+                    'error'
+                );
+                return;
+            }
             throw new Error(fileData.description || 'Gagal mendapatkan file');
         }
+
+        const fileUrl = `https://api.telegram.org/file/bot${botToken}/${fileData.result.file_path}`;
+        const downloadResponse = await fetch(fileUrl);
+        const blob = await downloadResponse.blob();
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        showNotification(`${file.name} berhasil diunduh!`);
     } catch (error) {
         showNotification(`Error mengunduh file: ${error.message}`, 'error');
         console.error('Download error:', error);
