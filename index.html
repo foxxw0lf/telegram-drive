@@ -443,6 +443,7 @@
                     <span class="breadcrumb-item" id="currentFolder">Semua File</span>
                 </div>
                 <div class="toolbar-actions">
+                    <input type="text" id="searchInput" placeholder="Cari file..." style="padding:0.5rem; border-radius:4px; border:1px solid #ccc; font-size:0.9rem;" oninput="filterFiles()">
                     <button class="btn btn-sec" onclick="refreshFiles()">🔄 Refresh</button>
                     <button class="btn btn-pri" onclick="showUploadGuide()">📤 Upload Guide</button>
                 </div>
@@ -496,6 +497,13 @@
     <div class="notification" id="notification"></div>
 
     <script>
+        let searchTerm = "";
+
+        // Fungsi filter berdasarkan pencarian
+        function filterFiles() {
+            searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            renderFiles();
+        }
         let botToken = '';
         let chatId = '';
         let files = [];
@@ -615,41 +623,50 @@ async function connectBot() {
             renderFiles();
         }
 
-        function renderFiles() {
-            const fileList = document.getElementById('fileList');
-            const emptyState = document.getElementById('emptyState');
-            
-            let filteredFiles = files;
-            
-            if (currentFilter !== 'all') {
-                filteredFiles = files.filter(file => file.category === currentFilter);
-            }
+// Update renderFiles agar mendukung pencarian dan preview gambar
+function renderFiles() {
+    const fileList = document.getElementById('fileList');
+    const emptyState = document.getElementById('emptyState');
 
-            if (filteredFiles.length === 0) {
-                fileList.style.display = 'none';
-                emptyState.style.display = 'block';
-                return;
-            }
+    let filteredFiles = files;
 
-            fileList.style.display = 'block';
-            emptyState.style.display = 'none';
+    // Filter berdasarkan folder
+    if (currentFilter !== 'all') {
+        filteredFiles = files.filter(file => file.category === currentFilter);
+    }
 
-            fileList.innerHTML = filteredFiles.map(file => `
-                <div class="file-item">
-                    <div class="file-info">
-                        <div class="file-icon ${file.type}">${getFileIcon(file.type)}</div>
-                        <div class="file-name">${file.name}</div>
-                    </div>
-                    <div class="file-size">${file.size}</div>
-                    <div class="file-date">${formatDate(file.date)}</div>
-                    <div class="file-actions">
-                        <button class="action-btn" onclick="downloadFile(${file.id})">⬇️</button>
-                        <button class="action-btn" onclick="shareFile(${file.id})">🔗</button>
-                        <button class="action-btn" onclick="deleteFile(${file.id})">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
-        }
+    // Filter berdasarkan search
+    if (searchTerm && searchTerm.trim() !== "") {
+        filteredFiles = filteredFiles.filter(file => file.name.toLowerCase().includes(searchTerm));
+    }
+
+    if (filteredFiles.length === 0) {
+        fileList.style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    fileList.style.display = 'block';
+    emptyState.style.display = 'none';
+
+    fileList.innerHTML = filteredFiles.map(file => `
+        <div class="file-item">
+            <div class="file-info">
+                ${file.type === 'img' ? 
+                    `<img src="https://api.telegram.org/file/bot${botToken}/${file.file_id}" alt="${file.name}" style="width:36px;height:36px;object-fit:cover;border-radius:4px;border:1px solid #eee;margin-right:0.5rem;">` 
+                    : `<div class="file-icon ${file.type}">${getFileIcon(file.type)}</div>`
+                }
+                <div class="file-name">${file.name}</div>
+            </div>
+            <div class="file-size">${file.size}</div>
+            <div class="file-date">${formatDate(file.date)}</div>
+            <div class="file-actions">
+                <button class="action-btn" onclick="downloadFile(${file.id})">⬇️</button>
+                <button class="action-btn" onclick="shareFile(${file.id})">🔗</button>
+            </div>
+        </div>
+    `).join('');
+}
 
         function getFileIcon(type) {
             const icons = {
